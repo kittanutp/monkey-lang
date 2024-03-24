@@ -22,6 +22,10 @@ const (
 	SLASH    = "/"
 	LT       = "<"
 	GT       = ">"
+	EQ       = "=="
+	NEQ      = "!="
+	LTE      = "<="
+	GTE      = ">="
 
 	COMMA     = ","
 	SEMICOLON = ";"

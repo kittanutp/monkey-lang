@@ -41,21 +41,45 @@ func (l *Lexer) NextToken() token.Token {
 	case ',':
 		tok = newToken(token.COMMA, l.ch)
 	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
+		if l.peek() == '=' {
+			tok.Literal = "=="
+			tok.Type = token.EQ
+			l.readChar()
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
 	case '+':
 		tok = newToken(token.PLUS, l.ch)
 	case '-':
 		tok = newToken(token.MINUS, l.ch)
 	case '!':
-		tok = newToken(token.BANG, l.ch)
+		if l.peek() == '=' {
+			tok.Literal = "!="
+			tok.Type = token.NEQ
+			l.readChar()
+		} else {
+			tok = newToken(token.BANG, l.ch)
+		}
 	case '*':
 		tok = newToken(token.ASTERISK, l.ch)
 	case '/':
 		tok = newToken(token.SLASH, l.ch)
 	case '<':
-		tok = newToken(token.LT, l.ch)
+		if l.peek() == '=' {
+			tok.Literal = "<="
+			tok.Type = token.LTE
+			l.readChar()
+		} else {
+			tok = newToken(token.LT, l.ch)
+		}
 	case '>':
-		tok = newToken(token.GT, l.ch)
+		if l.peek() == '=' {
+			tok.Literal = ">="
+			tok.Type = token.GTE
+			l.readChar()
+		} else {
+			tok = newToken(token.GT, l.ch)
+		}
 	case '{':
 		tok = newToken(token.LBRACE, l.ch)
 	case '}':
@@ -112,4 +136,11 @@ func (l *Lexer) readNumber() string {
 
 func isDigit(ch rune) bool {
 	return unicode.IsDigit(ch)
+}
+
+func (l *Lexer) peek() rune {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+	return []rune(l.input)[l.readPosition]
 }
