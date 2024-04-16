@@ -5,19 +5,42 @@ import (
 	"monkey-lang/ast"
 	"monkey-lang/lexer"
 	"monkey-lang/token"
+	"strconv"
 )
 
-type Parser struct {
-	l         *lexer.Lexer
-	errors    []string
-	curToken  token.Token
-	peekToken token.Token
-}
+type (
+	Parser struct {
+		l              *lexer.Lexer
+		errors         []string
+		curToken       token.Token
+		peekToken      token.Token
+		prefixParseFns map[token.TokenType]prefixParseFn
+		infixParseFns  map[token.TokenType]infixParseFn
+	}
+
+	prefixParseFn func() ast.Expression
+
+	infixParseFn func(ast.Expression) ast.Expression
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l}
 	p.nextToken()
 	p.nextToken()
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	return p
 }
 
@@ -47,7 +70,7 @@ func (p *Parser) parseStament() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStament()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -99,4 +122,44 @@ func (p *Parser) parseReturnStament() *ast.ReturnStatement {
 		p.nextToken()
 	}
 	return stm
+}
+
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stm := &ast.ExpressionStatement{Token: p.curToken}
+	stm.Expression = p.parseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stm
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+	return leftExp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not convert %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	return &ast.IntegerLiteral{Token: p.curToken, Value: value}
 }

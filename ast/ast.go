@@ -5,24 +5,50 @@ import (
 	"monkey-lang/token"
 )
 
-type Node interface {
-	TokenLiteral() string
-	String() string
-}
+type (
+	Node interface {
+		TokenLiteral() string
+		String() string
+	}
+	Statement interface {
+		Node
+		statementNode()
+	}
+	Expression interface {
+		Node
+		expressionNode()
+	}
 
-type Statement interface {
-	Node
-	statementNode()
-}
+	Program struct {
+		Statements []Statement
+	}
 
-type Expression interface {
-	Node
-	expressionNode()
-}
+	LetStatement struct {
+		Token token.Token
+		Name  *Identifier
+		Value Expression
+	}
 
-type Program struct {
-	Statements []Statement
-}
+	Identifier struct {
+		Token token.Token
+		Value string
+	}
+
+	ReturnStatement struct {
+		Token       token.Token
+		ReturnValue Expression
+	}
+
+	ExpressionStatement struct {
+		Token      token.Token
+		Expression Expression
+	}
+
+	IntegerLiteral struct {
+		Token token.Token
+		Value int64
+	}
+)
 
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
@@ -38,12 +64,6 @@ func (p *Program) String() string {
 		out.WriteString(s.String())
 	}
 	return out.String()
-}
-
-type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Value Expression
 }
 
 func (ls *LetStatement) statementNode() {}
@@ -63,11 +83,6 @@ func (ls *LetStatement) String() string {
 	return out.String()
 }
 
-type Identifier struct {
-	Token token.Token
-	Value string
-}
-
 func (i *Identifier) expressionNode() {}
 
 func (i *Identifier) TokenLiteral() string {
@@ -75,11 +90,6 @@ func (i *Identifier) TokenLiteral() string {
 }
 func (i *Identifier) String() string {
 	return i.Value
-}
-
-type ReturnStatement struct {
-	Token       token.Token
-	ReturnValue Expression
 }
 
 func (rs *ReturnStatement) statementNode() {}
@@ -98,11 +108,6 @@ func (rs *ReturnStatement) String() string {
 	return out.String()
 }
 
-type ExpressionStatement struct {
-	Token      token.Token
-	Expression Expression
-}
-
 func (es *ExpressionStatement) statementNode() {}
 
 func (es *ExpressionStatement) TokenLiteral() string {
@@ -114,4 +119,14 @@ func (es *ExpressionStatement) String() string {
 		return es.Expression.String()
 	}
 	return ""
+}
+
+func (lt *IntegerLiteral) expressionNode() {}
+
+func (lt *IntegerLiteral) TokenLiteral() string {
+	return lt.Token.Literal
+}
+
+func (lt *IntegerLiteral) String() string {
+	return lt.Token.Literal
 }
