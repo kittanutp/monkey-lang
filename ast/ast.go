@@ -54,6 +54,13 @@ type (
 		Operator string
 		Right    Expression
 	}
+
+	InfixExpression struct {
+		Token    token.Token
+		Left     Expression
+		Operator string
+		Right    Expression
+	}
 )
 
 func (p *Program) TokenLiteral() string {
@@ -150,4 +157,20 @@ func (pe *PrefixExpression) String() string {
 	out.WriteString(pe.Right.String())
 	out.WriteString(")")
 	return out.String()
+}
+
+func (ie *InfixExpression) expressionNode() {}
+
+func (ie *InfixExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+	return out.String()
+}
+
+func (ie *InfixExpression) TokenLiteral() string {
+	return ie.Token.Literal
 }
