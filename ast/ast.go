@@ -61,6 +61,11 @@ type (
 		Operator string
 		Right    Expression
 	}
+
+	Boolean struct {
+		Token token.Token
+		Value bool
+	}
 )
 
 func (p *Program) TokenLiteral() string {
@@ -173,4 +178,14 @@ func (ie *InfixExpression) String() string {
 
 func (ie *InfixExpression) TokenLiteral() string {
 	return ie.Token.Literal
+}
+
+func (b *Boolean) expressionNode() {}
+
+func (b *Boolean) TokenLiteral() string {
+	return b.Token.Literal
+}
+
+func (b *Boolean) String() string {
+	return b.Token.Literal
 }

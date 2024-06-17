@@ -54,6 +54,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.pareseInfixExpression)
 	p.registerInfix(token.LTE, p.pareseInfixExpression)
 	p.registerInfix(token.GTE, p.pareseInfixExpression)
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
+
 	return p
 }
 
@@ -146,6 +149,7 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	// defer untrace(trace("parseExpresionStatement"))
 	stm := &ast.ExpressionStatement{Token: p.curToken}
 	stm.Expression = p.parseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -155,6 +159,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	// defer untrace((trace("parseExpresiion")))
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		p.noPrefixParseFnError(p.curToken.Type)
@@ -177,6 +182,7 @@ func (p *Parser) parseIdentifier() ast.Expression {
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+	// defer untrace(trace("parseIntegerLiteral"))
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
 		msg := fmt.Sprintf("could not convert %q as integer", p.curToken.Literal)
@@ -192,6 +198,7 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expression {
+	// defer untrace(trace("parsePrefixExpression"))
 	expression := &ast.PrefixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -229,6 +236,7 @@ func (p *Parser) curPrecedence() int {
 }
 
 func (p *Parser) pareseInfixExpression(left ast.Expression) ast.Expression {
+	// defer untrace(trace("pareseInfixExpression"))
 	exp := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
@@ -238,4 +246,11 @@ func (p *Parser) pareseInfixExpression(left ast.Expression) ast.Expression {
 	p.nextToken()
 	exp.Right = p.parseExpression(precedence)
 	return exp
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{
+		Token: p.curToken,
+		Value: p.curTokenIs(token.TRUE),
+	}
 }
